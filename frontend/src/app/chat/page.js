@@ -6,34 +6,69 @@ export default function ChatPage() {
   // =========================
   // STATE
   // =========================
-  const [user, setUser] = useState(null);
-  const [pesan, setPesan] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const chatEndRef = useRef(null);
+  const [user, setUser] = useState(null);
+
+  // Session chat yang sedang aktif
+  const [sessionId, setSessionId] = useState(null);
+
+  const [pesan, setPesan] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   const [chat, setChat] = useState([
     {
       sender: "bot",
-      text: "Halo 👋 Aku siap mendengarkan curhatanmu hari ini.",
+      text: "Halo 👋 Aku siap membantu permasalahan akademikmu hari ini.",
     },
   ]);
+
+  // Sidebar
+  const [chatList, setChatList] = useState([]);
+
+  // Token Usage
+  const [tokenUsage, setTokenUsage] = useState({
+    prompt: 0,
+    completion: 0,
+    total: 0,
+  });
+
+  const chatEndRef = useRef(null);
 
   // =========================
   // CEK LOGIN
   // =========================
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("user"));
+    const initChat = async () => {
+      const data = JSON.parse(localStorage.getItem("user"));
 
-    if (!data) {
-      window.location.href = "/login";
-      return;
-    }
+      if (!data) {
+        window.location.href = "/login";
+        return;
+      }
 
-    setUser(data);
-    loadChat(data.id);
+      setUser(data);
+
+      const sessions = await loadChatSessions(data.id);
+
+      if (sessions.length > 0) {
+        const latest = sessions[0];
+
+        setSessionId(latest.id);
+
+        loadChat(latest.id);
+      } else {
+        const id = await createNewChat(data.id);
+
+        if (id) {
+          loadChat(id);
+          loadChatSessions(data.id);
+        }
+      }
+    };
+
+    initChat();
   }, []);
-
   // =========================
   // AUTO SCROLL
   // =========================
@@ -46,13 +81,21 @@ export default function ChatPage() {
   // =========================
   // LOAD CHAT HISTORY
   // =========================
-  const loadChat = async (userId) => {
+  const loadChat = async (sessionId) => {
     try {
       const response = await fetch(
-        `https://curhat-akademik-backend.vercel.app/get-chat/${userId}`,
+        `https://curhat-akademik-backend.vercel.app/get-chat/${sessionId}`,
       );
 
       const data = await response.json();
+
+      if (data.usage) {
+        setTokenUsage({
+          prompt: data.usage.prompt_tokens,
+          completion: data.usage.completion_tokens,
+          total: data.usage.total_tokens,
+        });
+      }
 
       let history = [
         {
@@ -78,6 +121,60 @@ export default function ChatPage() {
       setChat(history);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  // =========================
+  // CREATE NEW CHAT
+  // =========================
+  const createNewChat = async (userId, title = "Chat Baru") => {
+    try {
+      const response = await fetch(
+        "https://curhat-akademik-backend.vercel.app/new-chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            title,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+
+      setSessionId(data.session.id);
+
+      return data.session.id;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  // =========================
+  // LOAD CHAT SESSIONS
+  // =========================
+  const loadChatSessions = async (userId) => {
+    try {
+      const response = await fetch(
+        `https://curhat-akademik-backend.vercel.app/chat-sessions/${userId}`,
+      );
+
+      const data = await response.json();
+
+      setChatList(data);
+
+      return data;
+    } catch (error) {
+      console.error(error);
+      return [];
     }
   };
 
@@ -115,6 +212,7 @@ export default function ChatPage() {
           },
           body: JSON.stringify({
             user_id: user.id,
+            session_id: sessionId,
             pesan: pesanUser,
           }),
         },
@@ -148,10 +246,10 @@ export default function ChatPage() {
       // =========================
       const payload = {
         user_id: user.id,
+        session_id: sessionId,
         pesan_user: pesanUser,
         respon_gpt: jawabanGPT,
       };
-
       console.log("Payload:", payload);
 
       const saveResponse = await fetch(
@@ -168,6 +266,7 @@ export default function ChatPage() {
       const saveData = await saveResponse.json();
 
       console.log("Save Chat:", saveData);
+      await loadChatSessions(user.id);
     } catch (error) {
       console.error(error);
 
@@ -184,49 +283,113 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="h-screen bg-slate-950 text-white flex flex-col">
-      {/* HEADER */}
+    <main className="h-screen bg-slate-950 text-white flex">
+      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col">
+        <div className="p-5 border-b border-slate-800">
+          <h2 className="text-2xl font-bold">🧠 Curhat Akademik</h2>
 
-      <header className="border-b border-slate-800 bg-slate-900">
-        <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold">🧠 Curhat Akademik</h1>
-
-            <p className="text-slate-400 text-sm">Halo, {user?.nama}</p>
-          </div>
+          <p className="text-sm text-slate-400 mt-1">AI Pendamping Mahasiswa</p>
 
           <button
-            onClick={() => {
-              localStorage.removeItem("user");
-              window.location.href = "/login";
+            onClick={async () => {
+              const id = await createNewChat(user.id);
+
+              if (!id) return;
+
+              setSessionId(id);
+
+              setChat([
+                {
+                  sender: "bot",
+                  text: "Halo 👋 Aku siap membantu permasalahan akademikmu hari ini.",
+                },
+              ]);
+
+              setPesan("");
+
+              setLoading(false);
+
+              setTokenUsage({
+                prompt: 0,
+                completion: 0,
+                total: 0,
+              });
+
+              await loadChatSessions(user.id);
+
+              loadChat(id);
             }}
-            className="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-xl transition"
           >
-            Logout
+            + New Chat
           </button>
         </div>
-      </header>
 
-      {/* CHAT */}
-
-      <section className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {chat.map((item, index) => (
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {chatList.map((item) => (
             <div
-              key={index}
-              className={`flex ${
-                item.sender === "user" ? "justify-end" : "justify-start"
-              }`}
+              key={item.id}
+              onClick={() => {
+                setSessionId(item.id);
+                loadChat(item.id);
+              }}
+              className={`rounded-xl p-3 cursor-pointer transition
+      ${
+        sessionId === item.id
+          ? "bg-blue-600"
+          : "bg-slate-800 hover:bg-slate-700"
+      }`}
             >
-              <div className="flex gap-3 items-end">
-                {item.sender === "bot" && (
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-lg">
-                    🤖
-                  </div>
-                )}
+              💬 {item.title}
+            </div>
+          ))}
+        </div>
+      </aside>
 
-                <div
-                  className={`
+      <div className="flex-1 flex flex-col">
+        {/* HEADER */}
+
+        <header className="border-b border-slate-800 bg-slate-900">
+          <div className="px-8 py-5 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold">Curhat Akademik AI</h1>
+
+              <p className="text-slate-400 text-sm">
+                Selamat datang, {user?.nama}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem("user");
+                window.location.href = "/login";
+              }}
+              className="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-xl transition"
+            >
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {/* CHAT */}
+
+        <section className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="max-w-5xl mx-auto space-y-6">
+            {chat.map((item, index) => (
+              <div
+                key={index}
+                className={`flex ${
+                  item.sender === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div className="flex gap-3 items-end">
+                  {item.sender === "bot" && (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-lg">
+                      🤖
+                    </div>
+                  )}
+
+                  <div
+                    className={`
                   max-w-xl
                   px-6
                   py-4
@@ -235,53 +398,53 @@ export default function ChatPage() {
                   whitespace-pre-wrap
                   ${item.sender === "user" ? "bg-blue-600" : "bg-slate-800"}
                 `}
-                >
-                  {item.text}
-                </div>
-
-                {item.sender === "user" && (
-                  <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center">
-                    👤
+                  >
+                    {item.text}
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
 
-          {loading && (
-            <div className="flex">
-              <div className="flex gap-3">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                  🤖
-                </div>
-
-                <div className="bg-slate-800 rounded-3xl px-6 py-4">
-                  AI sedang mengetik...
+                  {item.sender === "user" && (
+                    <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center">
+                      👤
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            ))}
 
-          <div ref={chatEndRef}></div>
-        </div>
-      </section>
+            {loading && (
+              <div className="flex">
+                <div className="flex gap-3">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                    🤖
+                  </div>
 
-      {/* INPUT CHAT */}
+                  <div className="bg-slate-800 rounded-3xl px-6 py-4">
+                    AI sedang mengetik...
+                  </div>
+                </div>
+              </div>
+            )}
 
-      <footer className="border-t border-slate-800 bg-slate-900">
-        <div className="max-w-5xl mx-auto p-5">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={pesan}
-              placeholder="Ceritakan apa yang sedang kamu rasakan..."
-              onChange={(e) => setPesan(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  kirimPesan();
-                }
-              }}
-              className="
+            <div ref={chatEndRef}></div>
+          </div>
+        </section>
+
+        {/* INPUT CHAT */}
+
+        <footer className="border-t border-slate-800 bg-slate-900">
+          <div className="max-w-5xl mx-auto p-5">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={pesan}
+                placeholder="Ceritakan apa yang sedang kamu rasakan..."
+                onChange={(e) => setPesan(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    kirimPesan();
+                  }
+                }}
+                className="
               flex-1
               bg-slate-800
               border
@@ -293,12 +456,12 @@ export default function ChatPage() {
               focus:border-blue-500
               transition
             "
-            />
+              />
 
-            <button
-              onClick={kirimPesan}
-              disabled={loading}
-              className="
+              <button
+                onClick={kirimPesan}
+                disabled={loading}
+                className="
               bg-gradient-to-r
               from-blue-600
               to-purple-600
@@ -310,12 +473,13 @@ export default function ChatPage() {
               font-bold
               transition
             "
-            >
-              {loading ? "..." : "➤"}
-            </button>
+              >
+                {loading ? "..." : "➤"}
+              </button>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </main>
   );
 }
