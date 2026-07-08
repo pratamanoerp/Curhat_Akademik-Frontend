@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 export default function ChatPage() {
   // =========================
@@ -391,16 +392,20 @@ export default function ChatPage() {
 
                   <div
                     className={`
-                  max-w-xl
-                  px-6
-                  py-4
-                  rounded-3xl
-                  shadow-lg
-                  whitespace-pre-wrap
-                  ${item.sender === "user" ? "bg-blue-600" : "bg-slate-800"}
-                `}
+                    max-w-xl
+                    px-6
+                    py-4
+                    rounded-3xl
+                    shadow-lg
+                    whitespace-pre-wrap
+                    ${item.sender === "user" ? "bg-blue-600" : "bg-slate-800 prose prose-invert max-w-none"}
+                  `}
                   >
-                    {item.text}
+                    {item.sender === "bot" ? (
+                      <ReactMarkdown>{item.text}</ReactMarkdown>
+                    ) : (
+                      item.text
+                    )}
                   </div>
 
                   {item.sender === "user" && (
