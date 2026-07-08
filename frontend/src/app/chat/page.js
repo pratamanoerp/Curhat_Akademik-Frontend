@@ -128,6 +128,7 @@ export default function ChatPage() {
   // CREATE NEW CHAT
   // =========================
   const createNewChat = async (userId, title = "Chat Baru") => {
+    console.log("User ID:", userId);
     try {
       const response = await fetch(
         "https://curhat-akademik-backend.vercel.app/new-chat",
