@@ -1,0 +1,77 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C7CF0"/>
+      <stop offset="100%" stop-color="#9B6BE0"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F3F0FF"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9AC1"/>
+      <stop offset="100%" stop-color="#FF6FA5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- App icon background, rounded square (iOS-style superellipse look) -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#glow)"/>
+
+  <!-- small floating sparkles for warmth -->
+  <circle cx="120" cy="120" r="7" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="400" cy="150" r="5" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="410" cy="380" r="6" fill="#FFFFFF" opacity="0.4"/>
+
+  <!-- Chat bubble character body -->
+  <g>
+    <path d="M256 108
+             c94 0 168 62 168 145
+             c0 79 -70 140 -160 145
+             c-8 12 -22 30 -46 44
+             c6 -16 8 -34 6 -46
+             c-77 -20 -136 -74 -136 -143
+             c0 -83 74 -145 168 -145 z"
+          fill="url(#bubble)"/>
+
+    <!-- cute cheeks -->
+    <ellipse cx="182" cy="268" rx="18" ry="12" fill="#FFB6D5" opacity="0.7"/>
+    <ellipse cx="330" cy="268" rx="18" ry="12" fill="#FFB6D5" opacity="0.7"/>
+
+    <!-- heart eyes (curhat = heart-to-heart) -->
+    <g transform="translate(178,225) scale(1.15)">
+      <path d="M20 8
+               c5 -10 20 -10 20 2
+               c0 10 -14 18 -20 24
+               c-6 -6 -20 -14 -20 -24
+               c0 -12 15 -12 20 -2 z"
+            fill="#6C6CE0"/>
+    </g>
+    <g transform="translate(280,225) scale(1.15)">
+      <path d="M20 8
+               c5 -10 20 -10 20 2
+               c0 10 -14 18 -20 24
+               c-6 -6 -20 -14 -20 -24
+               c0 -12 15 -12 20 -2 z"
+            fill="#6C6CE0"/>
+    </g>
+
+    <!-- soft smile -->
+    <path d="M222 296 q34 26 68 0" stroke="#8B7FD9" stroke-width="7" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Big heart badge, bottom-right, representing "curhat" (sharing feelings) -->
+  <g transform="translate(324,300)">
+    <circle cx="46" cy="46" r="52" fill="#FFFFFF"/>
+    <path d="M46 78
+             C 10 54 -4 30 8 12
+             C 18 -3 42 -3 46 16
+             C 50 -3 74 -3 84 12
+             C 96 30 82 54 46 78 Z"
+          fill="url(#heart)"/>
+  </g>
+</svg>
