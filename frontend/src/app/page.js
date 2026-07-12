@@ -129,7 +129,7 @@ export default function HomePage() {
       </section>
       {/* CTA */}
       <section className="px-6 pb-24">
-        <div className="max-w-5xl mx-auto bg-gradient-to-r from-blue-600 to-purple-600 rounded-[40px] p-12 text-center">
+        <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-600 to-purple-600 rounded-[40px] p-12 text-center">
           <h2 className="text-5xl font-bold mb-5">Siap Curhat Hari Ini?</h2>
 
           <p className="text-xl mb-8">

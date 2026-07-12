@@ -26,6 +26,7 @@ export default function ChatPage() {
 
   // Sidebar
   const [chatList, setChatList] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Token Usage
   const [tokenUsage, setTokenUsage] = useState({
@@ -62,6 +63,7 @@ export default function ChatPage() {
         const id = await createNewChat(data.id);
 
         if (id) {
+          setSessionId(id);
           loadChat(id);
           loadChatSessions(data.id);
         }
@@ -150,8 +152,6 @@ export default function ChatPage() {
       if (!response.ok) {
         throw new Error(data.message);
       }
-
-      setSessionId(data.session.id);
 
       return data.session.id;
     } catch (error) {
@@ -286,19 +286,56 @@ export default function ChatPage() {
 
   return (
     <main className="h-screen bg-slate-950 text-white flex">
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={`
+            fixed
+            top-0
+            left-0
+            h-full
+            w-72 max-w-[85vw]
+            bg-slate-900
+            border-r
+            border-slate-800
+            flex
+            flex-col
+            z-50
+            transition-transform duration-300 ease-in-out
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+            md:static
+            md:translate-x-0
+      `}
+      >
         <div className="p-5 border-b border-slate-800">
-          <h2 className="text-2xl font-bold">🧠 Curhat Akademik</h2>
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg md:text-2xl font-bold">
+              🧠 Curhat Akademik
+            </h1>
+
+            <button
+              className="md:hidden text-2xl"
+              onClick={() => setSidebarOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
 
           <p className="text-sm text-slate-400 mt-1">AI Pendamping Mahasiswa</p>
 
           <button
+            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 rounded-xl py-3 font-semibold transition"
             onClick={async () => {
               const id = await createNewChat(user.id);
 
               if (!id) return;
 
               setSessionId(id);
+              setSidebarOpen(false);
 
               setChat([
                 {
@@ -331,10 +368,11 @@ export default function ChatPage() {
             <div
               key={item.id}
               onClick={() => {
+                setSidebarOpen(false);
                 setSessionId(item.id);
                 loadChat(item.id);
               }}
-              className={`rounded-xl p-3 cursor-pointer transition
+              className={`rounded-xl px-4 py-3 cursor-pointer transition
       ${
         sessionId === item.id
           ? "bg-blue-600"
@@ -347,17 +385,28 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col w-full">
         {/* HEADER */}
 
         <header className="border-b border-slate-800 bg-slate-900">
-          <div className="px-8 py-5 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">Curhat Akademik AI</h1>
+          <div className="px-4 md:px-8 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <button
+                className="md:hidden text-2xl"
+                onClick={() => setSidebarOpen(true)}
+              >
+                ☰
+              </button>
 
-              <p className="text-slate-400 text-sm">
-                Selamat datang, {user?.nama}
-              </p>
+              <div>
+                <h1 className="text-lg md:text-2xl font-bold">
+                  Curhat Akademik AI
+                </h1>
+
+                <p className="text-slate-400 text-sm">
+                  Selamat datang, {user?.nama}
+                </p>
+              </div>
             </div>
 
             <button
@@ -365,7 +414,7 @@ export default function ChatPage() {
                 localStorage.removeItem("user");
                 window.location.href = "/login";
               }}
-              className="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-xl transition"
+              className="bg-red-500 hover:bg-red-600 px-3 md:px-5 py-2 rounded-xl text-sm md:text-base transition"
             >
               Logout
             </button>
@@ -374,7 +423,7 @@ export default function ChatPage() {
 
         {/* CHAT */}
 
-        <section className="flex-1 overflow-y-auto px-6 py-8">
+        <section className="flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-8">
           <div className="max-w-5xl mx-auto space-y-6">
             {chat.map((item, index) => (
               <div
@@ -383,22 +432,26 @@ export default function ChatPage() {
                   item.sender === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                <div className="flex gap-3 items-end">
+                <div className="flex gap-2 md:gap-3 items-end">
                   {item.sender === "bot" && (
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-lg">
+                    <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-700 flex items-center justify-center">
                       🤖
                     </div>
                   )}
 
                   <div
                     className={`
-                    max-w-xl
-                    px-6
-                    py-4
+                    max-w-[85%] md:max-w-xl
+                    px-4 md:px-6
+                    py-3 md:py-4
                     rounded-3xl
                     shadow-lg
                     whitespace-pre-wrap
-                    ${item.sender === "user" ? "bg-blue-600" : "bg-slate-800 prose prose-invert max-w-none"}
+                    ${
+                      item.sender === "user"
+                        ? "bg-blue-600"
+                        : "bg-slate-800 prose prose-sm md:prose prose-invert"
+                    }
                   `}
                   >
                     {item.sender === "bot" ? (
@@ -409,7 +462,7 @@ export default function ChatPage() {
                   </div>
 
                   {item.sender === "user" && (
-                    <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center">
+                    <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-700 flex items-center justify-center">
                       👤
                     </div>
                   )}
@@ -419,12 +472,12 @@ export default function ChatPage() {
 
             {loading && (
               <div className="flex">
-                <div className="flex gap-3">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="flex gap-2 md:gap-3">
+                  <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                     🤖
                   </div>
 
-                  <div className="bg-slate-800 rounded-3xl px-6 py-4">
+                  <div className="bg-slate-800 rounded-3xl px-4 md:px-6 py-3 md:py-4">
                     AI sedang mengetik...
                   </div>
                 </div>
@@ -438,12 +491,12 @@ export default function ChatPage() {
         {/* INPUT CHAT */}
 
         <footer className="border-t border-slate-800 bg-slate-900">
-          <div className="max-w-5xl mx-auto p-5">
+          <div className="max-w-5xl mx-auto p-3 md:p-5">
             <div className="flex gap-3">
               <input
                 type="text"
                 value={pesan}
-                placeholder="Ceritakan apa yang sedang kamu rasakan..."
+                placeholder="Tulis Curhatan Anda"
                 onChange={(e) => setPesan(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -456,8 +509,8 @@ export default function ChatPage() {
               border
               border-slate-700
               rounded-full
-              px-6
-              py-4
+              px-4 md:px-6
+              py-3 md:py-4
               outline-none
               focus:border-blue-500
               transition
@@ -474,7 +527,7 @@ export default function ChatPage() {
               hover:from-blue-700
               hover:to-purple-700
               disabled:bg-slate-700
-              px-7
+              w-12 h-12 md:w-auto md:h-auto md:px-7
               rounded-full
               font-bold
               transition
