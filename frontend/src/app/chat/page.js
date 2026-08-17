@@ -276,7 +276,7 @@ export default function ChatPage() {
         ...prev,
         {
           sender: "bot",
-          text: "Maaf, terjadi kesalahan saat menghubungi AI.",
+          text: "Anda telah mencapai batas pengunaan AI hari ini. Silahkan coba kembali besok.",
         },
       ]);
     }
