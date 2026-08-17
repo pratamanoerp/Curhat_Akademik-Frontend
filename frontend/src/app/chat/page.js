@@ -224,12 +224,54 @@ export default function ChatPage() {
 
       console.log("Response GPT:", data);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Gagal mendapatkan jawaban AI");
+      // =========================
+      // OPENAI / SYSTEM MAINTENANCE
+      // =========================
+      if (response.status === 503 && data.maintenance) {
+        setChat((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text:
+              "🔧 **Sistem AI Sedang Maintenance**\n\n" +
+              "Layanan AI sedang mengalami gangguan sementara. " +
+              "Silakan coba kembali beberapa saat lagi.",
+          },
+        ]);
+
+        return;
       }
 
-      // Backend mengembalikan:
-      // { respon_gpt: "..." }
+      // =========================
+      // LIMIT CHAT
+      // =========================
+      if (response.status === 429) {
+        setChat((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text:
+              "⚠️ **Batas Chat Hari Ini Tercapai**\n\n" +
+              "Anda telah mencapai batas penggunaan AI hari ini. " +
+              "Silakan coba kembali besok.",
+          },
+        ]);
+
+        return;
+      }
+
+      // =========================
+      // ERROR LAINNYA
+      // =========================
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.message || "Gagal mendapatkan jawaban AI",
+        );
+      }
+
+      // =========================
+      // JAWABAN GPT
+      // =========================
       const jawabanGPT = data.respon_gpt;
 
       console.log("Jawaban GPT:", jawabanGPT);
@@ -252,6 +294,7 @@ export default function ChatPage() {
         pesan_user: pesanUser,
         respon_gpt: jawabanGPT,
       };
+
       console.log("Payload:", payload);
 
       const saveResponse = await fetch(
@@ -268,6 +311,7 @@ export default function ChatPage() {
       const saveData = await saveResponse.json();
 
       console.log("Save Chat:", saveData);
+
       await loadChatSessions(user.id);
     } catch (error) {
       console.error(error);
@@ -276,12 +320,14 @@ export default function ChatPage() {
         ...prev,
         {
           sender: "bot",
-          text: "Anda telah mencapai batas pengunaan AI hari ini. Silahkan coba kembali besok.",
+          text:
+            "❌ Terjadi kesalahan pada sistem. " +
+            "Silakan coba kembali beberapa saat lagi.",
         },
       ]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
