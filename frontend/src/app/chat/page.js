@@ -273,15 +273,18 @@ export default function ChatPage() {
       // JAWABAN GPT
       // =========================
       const jawabanGPT = data.respon_gpt;
+      const source = data.source || "openai";
 
-      console.log("Jawaban GPT:", jawabanGPT);
+      console.log("Response:", data);
+      console.log("Jawaban:", jawabanGPT);
+      console.log("Source:", source);
 
-      // Tampilkan jawaban AI
       setChat((prev) => [
         ...prev,
         {
           sender: "bot",
           text: jawabanGPT,
+          source: source,
         },
       ]);
 
